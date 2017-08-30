@@ -34,7 +34,7 @@ import static org.bytedeco.javacpp.opencv_core.*;
  */
 public interface DeepMAR extends Recognizer {
     float MEAN_PIXEL = 128;
-    float REG_COEFF = 1.0f / 256;
+    float REG_COEFF = 1.0f; // 1.0f / 256;
     Random random = new Random(System.currentTimeMillis());
 
     static int randomlyPickGPU(String gpus) {
