@@ -33,7 +33,10 @@ import static org.bytedeco.javacpp.opencv_core.*;
  * The interface DeepMAR defines some universal parameters and actions used by any DeepMAR implementations.
  */
 public interface DeepMAR extends Recognizer {
-    float MEAN_PIXEL = 128;
+    // float MEAN_PIXEL = 128;
+    float MEAN_PIXEL_B = 104;
+    float MEAN_PIXEL_G = 117;
+    float MEAN_PIXEL_R = 123;
     float REG_COEFF = 1.0f; // 1.0f / 256;
     Random random = new Random(System.currentTimeMillis());
 
@@ -51,7 +54,10 @@ public interface DeepMAR extends Recognizer {
             Loader.load(opencv_core.class);
         }
 
-        FloatPointer pMean32f;
+        // FloatPointer pMean32f;
+        FloatPointer pMean32f_B;
+        FloatPointer pMean32f_G;
+        FloatPointer pMean32f_R;
         FloatPointer pRegCoeff;
         DoublePointer pScale;
 
@@ -59,7 +65,10 @@ public interface DeepMAR extends Recognizer {
          * Create the pointers.
          */
         PointerManager() {
-            pMean32f = new FloatPointer(MEAN_PIXEL);
+            // pMean32f = new FloatPointer(MEAN_PIXEL);
+            pMean32f_B = new FloatPointer(MEAN_PIXEL_B);
+            pMean32f_G = new FloatPointer(MEAN_PIXEL_G);
+            pMean32f_R = new FloatPointer(MEAN_PIXEL_R);
             pRegCoeff = new FloatPointer(REG_COEFF);
             pScale = new DoublePointer(1.);
         }
@@ -71,7 +80,10 @@ public interface DeepMAR extends Recognizer {
          */
         @Override
         protected void finalize() throws Throwable {
-            pMean32f.deallocate();
+            // pMean32f.deallocate();
+            pMean32f_B.deallocate();
+            pMean32f_G.deallocate();
+            pMean32f_R.deallocate();
             pRegCoeff.deallocate();
             pScale.deallocate();
             super.finalize();
@@ -80,8 +92,8 @@ public interface DeepMAR extends Recognizer {
 
     PointerManager POINTERS = new PointerManager();
 
-    int INPUT_WIDTH = 227;
-    int INPUT_HEIGHT = 227;
+    int INPUT_WIDTH = 224;
+    int INPUT_HEIGHT = 224;
 
     /**
      * Preprocess the image, including mean value subtracting, value normalizing and pixel remapping.
@@ -107,14 +119,38 @@ public interface DeepMAR extends Recognizer {
 //            origin[i] = (origin[i] - 128) / 256;
 //        }
 //        imgData.put(origin);
-        // Subtract mean pixel.
+        // Subtract mean pixel for each channel
+//        sub32f(imgData, // Pointer to minuends
+//                4, // Bytes per step (4 bytes for float)
+//                POINTERS.pMean32f, // Pointer to subtrahend
+//                0, // Bytes per step (using the value 128 circularly)
+//                imgData, // Pointer to result buffer.
+//                4, // Bytes per step (4 bytes for float)
+//                1, numPixels, // Data dimensions.
+//                null);
         sub32f(imgData, // Pointer to minuends
-                4, // Bytes per step (4 bytes for float)
-                POINTERS.pMean32f, // Pointer to subtrahend
+                4*3, // Bytes per step (4 bytes for float)
+                POINTERS.pMean32f_B, // Pointer to subtrahend
                 0, // Bytes per step (using the value 128 circularly)
                 imgData, // Pointer to result buffer.
-                4, // Bytes per step (4 bytes for float)
-                1, numPixels, // Data dimensions.
+                4*3, // Bytes per step (4 bytes for float)
+                1, numPixelPerChannel, // Data dimensions.
+                null);
+        sub32f(imgData, // Pointer to minuends
+                4*3, // Bytes per step (4 bytes for float)
+                POINTERS.pMean32f_G, // Pointer to subtrahend
+                0, // Bytes per step (using the value 128 circularly)
+                imgData, // Pointer to result buffer.
+                4*3, // Bytes per step (4 bytes for float)
+                1, numPixelPerChannel, // Data dimensions.
+                null);
+        sub32f(imgData, // Pointer to minuends
+                4*3, // Bytes per step (4 bytes for float)
+                POINTERS.pMean32f_R, // Pointer to subtrahend
+                0, // Bytes per step (using the value 128 circularly)
+                imgData, // Pointer to result buffer.
+                4*3, // Bytes per step (4 bytes for float)
+                1, numPixelPerChannel, // Data dimensions.
                 null);
         // Regularize to -0.5 to 0.5. The additional scaling is disabled (set to 1).
         mul32f(imgData, 4, POINTERS.pRegCoeff, 0, imgData, 4, 1, numPixels, POINTERS.pScale);
@@ -215,5 +251,47 @@ public interface DeepMAR extends Recognizer {
             "action_pulling",
             "action_nipthing",
             "action_picking",
-            "action_other"};
+            "action_other",
+            "upper_black",
+            "upper_white",
+            "upper_gray",
+            "upper_red",
+            "upper_green",
+            "upper_blue",
+            "upper_silvery",
+            "upper_yellow",
+            "upper_brown",
+            "upper_purple",
+            "upper_pink",
+            "upper_orange",
+            "upper_mix_color",
+            "upper_other_color",
+            "lower_black",
+            "lower_white",
+            "lower_gray",
+            "lower_red",
+            "lower_green",
+            "lower_blue",
+            "lower_silver",
+            "lower_yellow",
+            "lower_brown",
+            "lower_purple",
+            "lower_pink",
+            "lower_orange",
+            "lower_mix_color",
+            "lower_other_color",
+            "shoes_black",
+            "shoes_white",
+            "shoes_gray",
+            "shoes_red",
+            "shoes_green",
+            "shoes_blue",
+            "shoes_silver",
+            "shoes_yellow",
+            "shoes_brown",
+            "shoes_purple",
+            "shoes_pink",
+            "shoes_orange",
+            "shoes_mix_color",
+            "shoes_other_color"};
 }
