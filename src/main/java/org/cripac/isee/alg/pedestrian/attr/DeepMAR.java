@@ -54,7 +54,7 @@ public interface DeepMAR extends Recognizer {
             Loader.load(opencv_core.class);
         }
 
-        // FloatPointer pMean32f;
+        FloatPointer pMean32f;
         FloatPointer pMean32f_B;
         FloatPointer pMean32f_G;
         FloatPointer pMean32f_R;
@@ -65,7 +65,7 @@ public interface DeepMAR extends Recognizer {
          * Create the pointers.
          */
         PointerManager() {
-            // pMean32f = new FloatPointer(MEAN_PIXEL);
+            pMean32f = new FloatPointer(0.);
             pMean32f_B = new FloatPointer(MEAN_PIXEL_B);
             pMean32f_G = new FloatPointer(MEAN_PIXEL_G);
             pMean32f_R = new FloatPointer(MEAN_PIXEL_R);
@@ -80,7 +80,7 @@ public interface DeepMAR extends Recognizer {
          */
         @Override
         protected void finalize() throws Throwable {
-            // pMean32f.deallocate();
+            pMean32f.deallocate();
             pMean32f_B.deallocate();
             pMean32f_G.deallocate();
             pMean32f_R.deallocate();
@@ -113,13 +113,6 @@ public interface DeepMAR extends Recognizer {
         final int numPixels = numPixelPerChannel * 3;
         final FloatPointer imgData = new FloatPointer(image.data());
 
-//        float[] origin = new float[numPixels];
-//        imgData.get(origin);
-//        for (int i = 0; i < numPixels; ++i) {
-//            origin[i] = (origin[i] - 128) / 256;
-//        }
-//        imgData.put(origin);
-        // Subtract mean pixel for each channel
 //        sub32f(imgData, // Pointer to minuends
 //                4, // Bytes per step (4 bytes for float)
 //                POINTERS.pMean32f, // Pointer to subtrahend
@@ -128,32 +121,9 @@ public interface DeepMAR extends Recognizer {
 //                4, // Bytes per step (4 bytes for float)
 //                1, numPixels, // Data dimensions.
 //                null);
-        sub32f(imgData, // Pointer to minuends
-                4*3, // Bytes per step (4 bytes for float)
-                POINTERS.pMean32f_B, // Pointer to subtrahend
-                0, // Bytes per step (using the value 128 circularly)
-                imgData, // Pointer to result buffer.
-                4*3, // Bytes per step (4 bytes for float)
-                1, numPixelPerChannel, // Data dimensions.
-                null);
-        sub32f(imgData, // Pointer to minuends
-                4*3, // Bytes per step (4 bytes for float)
-                POINTERS.pMean32f_G, // Pointer to subtrahend
-                0, // Bytes per step (using the value 128 circularly)
-                imgData, // Pointer to result buffer.
-                4*3, // Bytes per step (4 bytes for float)
-                1, numPixelPerChannel, // Data dimensions.
-                null);
-        sub32f(imgData, // Pointer to minuends
-                4*3, // Bytes per step (4 bytes for float)
-                POINTERS.pMean32f_R, // Pointer to subtrahend
-                0, // Bytes per step (using the value 128 circularly)
-                imgData, // Pointer to result buffer.
-                4*3, // Bytes per step (4 bytes for float)
-                1, numPixelPerChannel, // Data dimensions.
-                null);
+        
         // Regularize to -0.5 to 0.5. The additional scaling is disabled (set to 1).
-        mul32f(imgData, 4, POINTERS.pRegCoeff, 0, imgData, 4, 1, numPixels, POINTERS.pScale);
+        // mul32f(imgData, 4, POINTERS.pRegCoeff, 0, imgData, 4, 1, numPixels, POINTERS.pScale);
 
         //Slice into channels.
         MatVector bgr = new MatVector(3);
@@ -162,6 +132,13 @@ public interface DeepMAR extends Recognizer {
         final float[] pixelFloats = new float[numPixelPerChannel * 3];
         for (int i = 0; i < 3; ++i) {
             final FloatPointer fp = new FloatPointer(bgr.get(i).data());
+            switch(i) {
+                case 0: sub32f(fp, 4, POINTERS.pMean32f_B, 0, fp, 4, 1, numPixelPerChannel, null); break;
+                case 1: sub32f(fp, 4, POINTERS.pMean32f_G, 0, fp, 4, 1, numPixelPerChannel, null); break;
+                case 2: sub32f(fp, 4, POINTERS.pMean32f_R, 0, fp, 4, 1, numPixelPerChannel, null); break;
+                default: sub32f(fp, 4, POINTERS.pMean32f, 0, fp, 4, 1, numPixelPerChannel, null);;
+            }
+            mul32f(fp, 4, POINTERS.pRegCoeff, 0, fp, 4, 1, numPixelPerChannel, POINTERS.pScale);
             fp.get(pixelFloats, i * numPixelPerChannel, numPixelPerChannel);
             fp.deallocate();
         }
