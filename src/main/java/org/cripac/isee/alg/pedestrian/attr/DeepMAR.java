@@ -270,5 +270,9 @@ public interface DeepMAR extends Recognizer {
             "shoes_pink",
             "shoes_orange",
             "shoes_mix_color",
-            "shoes_other_color"};
+            "shoes_other_color",
+            "view_angle_front",
+            "view_angle_back",
+            "view_angle_left",
+            "view_angle_right"};
 }
